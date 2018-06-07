@@ -27,6 +27,7 @@ namespace PlanetWars
             AIProcess.StartInfo.UseShellExecute = false;
             AIProcess.StartInfo.RedirectStandardInput = true;
             AIProcess.StartInfo.RedirectStandardOutput = true;
+            AIProcess.StartInfo.RedirectStandardError = true;
             AIProcess.Start();
         }
 
@@ -53,6 +54,18 @@ namespace PlanetWars
             }
 
             return orders;
+        }
+
+        public List<string> GetAllErrorLines()
+        {
+            StreamReader reader = AIProcess.StandardError;
+            List<string> results = new List<string>();
+            while (reader.Peek() != -1)
+            {
+                results.Add(reader.ReadLine());
+            }
+
+            return results;
         }
 
         public void EndProcess()

@@ -98,6 +98,9 @@ namespace PlanetWars
                     replayData.Add($"P1ERROR: {map.PlayerOneError}");
                     replayData.Add($"P2ERROR: {map.PlayerTwoError}");
                     replayData.Add($"WINNER: {map.GetWinner()}");
+                    replayData.Add("");
+                    AppendCrashData(map, replayData, first, second);
+
                     replayData.ForEach(x => Console.WriteLine(x));
 
                     if (replayPath != "")
@@ -130,6 +133,19 @@ namespace PlanetWars
             first.EndProcess();
         }
 
+        private static void AppendCrashData(Map map, List<string> replayData, ManagedAI first, ManagedAI second)
+        {
+            if (map.PlayerOneError == "AI Crashed" || map.PlayerOneError == "Timed out")
+            {
+                replayData.AddRange(first.GetAllErrorLines().Select(x => $"1error# {x}"));
+            }
+
+            if (map.PlayerTwoError == "AI Crashed" || map.PlayerTwoError == "Timed out")
+            {
+                replayData.AddRange(second.GetAllErrorLines().Select(x => $"2error# {x}"));
+            }
+        }
+
         private static List<string> GetOrders(bool useTimeout, ManagedAI ai, Map map, int playerNumber)
         {
             if (playerNumber != 1 && playerNumber != 2)
@@ -149,6 +165,7 @@ namespace PlanetWars
                 else
                 {
                     SetError(map, playerNumber, "Timed out");
+                    return null;
                 }
             }
             else
