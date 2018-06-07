@@ -364,8 +364,6 @@
     <Content Include="Maps\map99.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="visualizer.html" />
-    <Content Include="visualizer.js" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
