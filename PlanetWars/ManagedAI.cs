@@ -45,6 +45,11 @@ namespace PlanetWars
             {
                 orders.Add(line);
                 line = reader.ReadLine();
+                if (line == null)
+                {
+                    // The process is toast if this happens.
+                    return null;
+                }
             }
 
             return orders;

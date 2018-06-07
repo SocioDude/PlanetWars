@@ -66,53 +66,25 @@ namespace PlanetWars
                 {
                     while (map.GetWinner() == -1)
                     {
-                        List<string> playerOneOrders = null;
-                        if (useTimeout)
-                        {
-                            var task = Task.Run(() => first.GetOrders(map.GetPlayerOneState()));
-                            if (task.Wait(TimeSpan.FromSeconds(1)))
-                            {
-                                playerOneOrders = task.Result;
-                            }
-                            else
-                            {
-                                map.PlayerOneError = "Timed out.";
-                            }
-                        }
-                        else
-                        {
-                            playerOneOrders = first.GetOrders(map.GetPlayerOneState());
-                        }
-
-                        List<string> playerTwoOrders = null;
-                        if (useTimeout)
-                        {
-                            var task = Task.Run(() => second.GetOrders(map.GetPlayerTwoState()));
-                            if (task.Wait(TimeSpan.FromSeconds(1)))
-                            {
-                                playerTwoOrders = task.Result;
-                            }
-                            else
-                            {
-                                map.PlayerTwoError = "Timed out.";
-                            }
-                        }
-                        else
-                        {
-                            playerTwoOrders = second.GetOrders(map.GetPlayerTwoState());
-                        }
-
+                        // Get the orders.
+                        List<string> playerOneOrders = GetOrders(useTimeout, first, map, 1);
+                        List<string> playerTwoOrders = GetOrders(useTimeout, second, map, 2);
                         if (map.PlayerOneError != "" || map.PlayerTwoError != "")
                         {
-                            // At least one AI timed out.
+                            // At least one AI timed out or crashed.
                             break;
                         }
 
+                        // Filter out debug statements.
                         List<string> playerOneDebug = new List<string>();
                         List<string> playerOneFilteredOrders = FilterOrders(playerOneOrders, playerOneDebug, 1);
                         List<string> playerTwoDebug = new List<string>();
                         List<string> playerTwoFilteredOrders = FilterOrders(playerTwoOrders, playerTwoDebug, 2);
+
+                        // Apply the orders.
                         map.ApplyOrders(playerOneFilteredOrders, playerTwoFilteredOrders);
+
+                        // Update the replay.
                         replayData.Add(map.ToString());
                         replayData.AddRange(playerOneDebug);
                         replayData.AddRange(playerTwoDebug);
@@ -156,6 +128,56 @@ namespace PlanetWars
             }
 
             first.EndProcess();
+        }
+
+        private static List<string> GetOrders(bool useTimeout, ManagedAI ai, Map map, int playerNumber)
+        {
+            if (playerNumber != 1 && playerNumber != 2)
+            {
+                throw new Exception("Invalid player number.");
+            }
+
+            List<string> orders = null;
+            List<string> mapState = playerNumber == 1 ? map.GetPlayerOneState() : map.GetPlayerTwoState();
+            if (useTimeout)
+            {
+                var task = Task.Run(() => ai.GetOrders(mapState));
+                if (task.Wait(TimeSpan.FromSeconds(1)))
+                {
+                    orders = task.Result;
+                }
+                else
+                {
+                    SetError(map, playerNumber, "Timed out");
+                }
+            }
+            else
+            {
+                orders = ai.GetOrders(mapState);
+            }
+
+            if (orders == null)
+            {
+                SetError(map, playerNumber, "AI Crashed");
+            }
+
+            return orders;
+        }
+
+        private static void SetError(Map map, int playerNumber, string error)
+        {
+            if (playerNumber == 1)
+            {
+                map.PlayerOneError = error;
+            }
+            else if (playerNumber == 2)
+            {
+                map.PlayerTwoError = error;
+            }
+            else
+            {
+                throw new Exception("Attempting to set error for non-existent player.");
+            }
         }
 
         private static List<string> FilterOrders(List<string> rawOrders, List<string> debugOutput, int playerNumber)
