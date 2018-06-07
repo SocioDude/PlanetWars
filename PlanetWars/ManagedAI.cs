@@ -84,7 +84,7 @@ namespace PlanetWars
                 Process proc = Process.GetProcessById(pid);
                 if (!proc.HasExited) proc.Kill();
             }
-            catch (ArgumentException)
+            catch (Exception)
             {
                 // Process already exited.
             }
