@@ -22,12 +22,14 @@ namespace PlanetWars
             string firstAIPath = "";
             string secondAIPath = "";
             string replayPath = "";
+            bool useTimeout = true;
 
             var p = new OptionSet() {
                 { "m|map=", "(required) the path to the map", v => mapPath = v },
                 { "ai1|firstAI=", "(required) path to the first AI", v => firstAIPath = v },
                 { "ai2|secondAI=", "(required) path to the first AI", v => secondAIPath = v },
-                { "r|replayPath=", "(optional) path to where replay should be written.", v => replayPath = v }
+                { "r|replayPath=", "(optional) path to where replay should be written.", v => replayPath = v },
+                { "notimeout", "(optional) set if no timeout should be used (usually to attach debugger).", v => useTimeout = false }
             };
 
             try
@@ -65,25 +67,39 @@ namespace PlanetWars
                     while (map.GetWinner() == -1)
                     {
                         List<string> playerOneOrders = null;
-                        var task = Task.Run(() => first.GetOrders(map.GetPlayerOneState()));
-                        if (task.Wait(TimeSpan.FromSeconds(1)))
+                        if (useTimeout)
                         {
-                            playerOneOrders = task.Result;
+                            var task = Task.Run(() => first.GetOrders(map.GetPlayerOneState()));
+                            if (task.Wait(TimeSpan.FromSeconds(1)))
+                            {
+                                playerOneOrders = task.Result;
+                            }
+                            else
+                            {
+                                map.PlayerOneError = "Timed out.";
+                            }
                         }
                         else
                         {
-                            map.PlayerOneError = "Timed out.";
+                            playerOneOrders = first.GetOrders(map.GetPlayerOneState());
                         }
 
                         List<string> playerTwoOrders = null;
-                        task = Task.Run(() => second.GetOrders(map.GetPlayerTwoState()));
-                        if (task.Wait(TimeSpan.FromSeconds(1)))
+                        if (useTimeout)
                         {
-                            playerTwoOrders = task.Result;
+                            var task = Task.Run(() => second.GetOrders(map.GetPlayerTwoState()));
+                            if (task.Wait(TimeSpan.FromSeconds(1)))
+                            {
+                                playerTwoOrders = task.Result;
+                            }
+                            else
+                            {
+                                map.PlayerTwoError = "Timed out.";
+                            }
                         }
                         else
                         {
-                            map.PlayerTwoError = "Timed out.";
+                            playerTwoOrders = second.GetOrders(map.GetPlayerTwoState());
                         }
 
                         if (map.PlayerOneError != "" || map.PlayerTwoError != "")
