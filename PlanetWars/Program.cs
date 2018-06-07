@@ -21,16 +21,13 @@ namespace PlanetWars
             string mapPath = "";
             string firstAIPath = "";
             string secondAIPath = "";
+            string replayPath = "";
 
             var p = new OptionSet() {
-                { "m|map=", "the path to the map.",
-                    v => mapPath = v },
-                { "ai1|firstAI=",
-                    "path to the first AI (should be .exe).",
-                    v => firstAIPath = v },
-                { "ai2|secondAI=",
-                    "path to the first AI (should be .exe).",
-                    v => secondAIPath = v }
+                { "m|map=", "(required) the path to the map", v => mapPath = v },
+                { "ai1|firstAI=", "(required) path to the first AI", v => firstAIPath = v },
+                { "ai2|secondAI=", "(required) path to the first AI", v => secondAIPath = v },
+                { "r|replayPath=", "(optional) path to where replay should be written.", v => replayPath = v }
             };
 
             try
@@ -41,6 +38,12 @@ namespace PlanetWars
             {
                 Console.Write("planetwars: ");
                 Console.WriteLine(e.Message);
+                return;
+            }
+
+            if (mapPath == "" || firstAIPath == "" || secondAIPath == "")
+            {
+                WriteUsage(p);
                 return;
             }
 
@@ -89,8 +92,14 @@ namespace PlanetWars
                             break;
                         }
 
-                        map.ApplyOrders(playerOneOrders, playerTwoOrders);
+                        List<string> playerOneDebug = new List<string>();
+                        List<string> playerOneFilteredOrders = FilterOrders(playerOneOrders, playerOneDebug, 1);
+                        List<string> playerTwoDebug = new List<string>();
+                        List<string> playerTwoFilteredOrders = FilterOrders(playerTwoOrders, playerTwoDebug, 2);
+                        map.ApplyOrders(playerOneFilteredOrders, playerTwoFilteredOrders);
                         replayData.Add(map.ToString());
+                        replayData.AddRange(playerOneDebug);
+                        replayData.AddRange(playerTwoDebug);
                         replayData.Add("go\n");
                     }
 
@@ -103,7 +112,18 @@ namespace PlanetWars
                     replayData.Add($"WINNER: {map.GetWinner()}");
                     replayData.ForEach(x => Console.WriteLine(x));
 
-                    File.WriteAllLines("replay.txt", replayData);
+                    if (replayPath != "")
+                    {
+                        try
+                        {
+                            File.WriteAllLines(replayPath, replayData);
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine($"Couldn't write replay at {replayPath}");
+                            Console.WriteLine(e.Message);
+                        }
+                    }
                 }
                 catch (Exception e)
                 {
@@ -120,6 +140,33 @@ namespace PlanetWars
             }
 
             first.EndProcess();
+        }
+
+        private static List<string> FilterOrders(List<string> rawOrders, List<string> debugOutput, int playerNumber)
+        {
+            List<string> orders = new List<string>();
+            foreach (string order in rawOrders)
+            {
+                if (order.StartsWith("#"))
+                {
+                    if (debugOutput.Count < 10)
+                    {
+                        debugOutput.Add(playerNumber + order);
+                    }
+                }
+                else
+                {
+                    orders.Add(order);
+                }
+            }
+
+            return orders;
+        }
+
+        private static void WriteUsage(OptionSet p)
+        {
+            Console.WriteLine("Options:");
+            p.WriteOptionDescriptions(Console.Out);
         }
     }
 }
