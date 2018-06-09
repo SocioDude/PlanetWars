@@ -309,7 +309,7 @@ namespace PlanetWars
             if (orderedForces.Count == 1)
             {
                 // This wasn't even a fight - someone was reinforcing themselves.
-                planet.Ships += orderedForces[0].Value;
+                planet.Ships = orderedForces[0].Value;
                 planet.Owner = orderedForces[0].Key;
             }
             else
