@@ -133,16 +133,25 @@ namespace PlanetWars
             first.EndProcess();
         }
 
+        // Will wait at most one second to get the error data - I've seen this just sit and do nothing.  Not sure why.
         private static void AppendCrashData(Map map, List<string> replayData, ManagedAI first, ManagedAI second)
         {
             if (map.PlayerOneError == "AI Crashed" || map.PlayerOneError == "Timed out")
             {
-                replayData.AddRange(first.GetAllErrorLines().Select(x => $"1error# {x}"));
+                var task = Task.Run(() => first.GetAllErrorLines().Select(x => $"1error# {x}"));
+                if (task.Wait(TimeSpan.FromSeconds(1)))
+                {
+                    replayData.AddRange(task.Result);
+                }
             }
 
             if (map.PlayerTwoError == "AI Crashed" || map.PlayerTwoError == "Timed out")
             {
-                replayData.AddRange(second.GetAllErrorLines().Select(x => $"2error# {x}"));
+                var task = Task.Run(() => second.GetAllErrorLines().Select(x => $"2error# {x}"));
+                if (task.Wait(TimeSpan.FromSeconds(1)))
+                {
+                    replayData.AddRange(task.Result);
+                }
             }
         }
 
