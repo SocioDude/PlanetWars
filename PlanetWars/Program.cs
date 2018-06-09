@@ -54,6 +54,7 @@ namespace PlanetWars
 
             List<string> replayData = new List<string>();
             replayData.Add(map.ToString());
+            replayData.Add("go\n");
             ManagedAI first = new ManagedAI(firstAIPath);
 
             // There's probably a less stupid language construct like some try-with-resources thing that could make
