@@ -92,8 +92,6 @@ namespace PlanetWars
                         replayData.Add("go\n");
                     }
 
-                    replayData.Add(map.ToString());
-                    replayData.Add("go\n");
                     replayData.Add("GAME OVER");
                     replayData.Add($"LENGTH: {map.TurnNumber}");
                     replayData.Add($"P1ERROR: {map.PlayerOneError}");
